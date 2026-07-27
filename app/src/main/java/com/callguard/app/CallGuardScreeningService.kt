@@ -25,33 +25,28 @@ class CallGuardScreeningService : CallScreeningService() {
         private const val TAG = "CallGuardService"
     }
 
-    override fun onScreenCall(callDetails: Call.Details) {
+   override fun onScreenCall(callDetails: Call.Details) {
         val prefs = Prefs(applicationContext)
         val number = callDetails.handle?.schemeSpecificPart
-
-        // If blocking feature is disabled, allow every call, no further checks needed.
-        if (!prefs.isBlockingEnabled) {
-            respondAllow(callDetails)
-            return
-        }
-
         val simSlot = resolveSimSlot(callDetails)
-        Log.d(TAG, "Incoming call from $number on simSlot=$simSlot")
+        val mode = prefs.modeForSlot(simSlot)
 
-        if (simSlot == 1) {
-            // SIM2 (index 1) -> never block
-            respondAllow(callDetails)
-            return
-        }
+        Log.d(TAG, "Incoming call from $number on simSlot=$simSlot mode=$mode")
 
-        // SIM1 (index 0) or unknown slot -> apply unknown-number blocking
-        if (number != null && isNumberInContacts(number)) {
-            respondAllow(callDetails)
-        } else {
-            respondBlock(callDetails)
+        when (mode) {
+            Prefs.ALLOW_ALL -> respondAllow(callDetails)
+            Prefs.BLOCK_ALL -> respondBlock(callDetails)
+            Prefs.CONTACTS_ONLY -> {
+                if (number != null && isNumberInContacts(number)) {
+                    respondAllow(callDetails)
+                } else {
+                    respondBlock(callDetails)
+                }
+            }
+            else -> respondAllow(callDetails)
         }
     }
-
+   
     /** Returns the sim slot index (0 or 1) for the PhoneAccountHandle attached to this call, or -1 if unknown. */
     private fun resolveSimSlot(callDetails: Call.Details): Int {
         return try {

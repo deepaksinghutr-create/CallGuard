@@ -9,23 +9,13 @@ import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.util.Log
 
-/**
- * This service is invoked by Android for every incoming call once this app
- * is set as the device's default "Call Screening" app.
- *
- * Logic:
- *  - Figure out which physical SIM slot the call arrived on (0 = SIM1, 1 = SIM2)
- *  - If it's SIM2 -> always allow
- *  - If it's SIM1 -> allow only if the number exists in Contacts, OR if the
- *    user has turned the blocking feature OFF in the app
- */
 class CallGuardScreeningService : CallScreeningService() {
 
     companion object {
         private const val TAG = "CallGuardService"
     }
 
-   override fun onScreenCall(callDetails: Call.Details) {
+    override fun onScreenCall(callDetails: Call.Details) {
         val prefs = Prefs(applicationContext)
         val number = callDetails.handle?.schemeSpecificPart
         val simSlot = resolveSimSlot(callDetails)
@@ -33,31 +23,30 @@ class CallGuardScreeningService : CallScreeningService() {
 
         Log.d(TAG, "Incoming call from $number on simSlot=$simSlot mode=$mode")
 
-        when (mode) {
-            Prefs.ALLOW_ALL -> respondAllow(callDetails)
-            Prefs.BLOCK_ALL -> respondBlock(callDetails)
-            Prefs.CONTACTS_ONLY -> {
-                if (number != null && isNumberInContacts(number)) {
-                    respondAllow(callDetails)
-                } else {
-                    respondBlock(callDetails)
-                }
-            }
-            else -> respondAllow(callDetails)
+        val allowed = when (mode) {
+            Prefs.ALLOW_ALL -> true
+            Prefs.BLOCK_ALL -> false
+            Prefs.CONTACTS_ONLY -> number != null && isNumberInContacts(number)
+            else -> true
         }
+
+        prefs.logCall(number, simSlot, mode, allowed)
+
+        if (allowed) respondAllow(callDetails) else respondBlock(callDetails)
     }
-   
-    /** Returns the sim slot index (0 or 1) for the PhoneAccountHandle attached to this call, or -1 if unknown. */
+
     private fun resolveSimSlot(callDetails: Call.Details): Int {
         return try {
             val handle = callDetails.accountHandle ?: return -1
-            val subscriptionManager =
-                getSystemService(SubscriptionManager::class.java) ?: return -1
             val telephonyManager =
                 getSystemService(TelephonyManager::class.java) ?: return -1
+            val subscriptionManager =
+                getSystemService(SubscriptionManager::class.java) ?: return -1
 
             @Suppress("MissingPermission")
             val subId = telephonyManager.getSubscriptionId(handle)
+            if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return -1
+
             @Suppress("MissingPermission")
             val info = subscriptionManager.getActiveSubscriptionInfo(subId)
             info?.simSlotIndex ?: -1
@@ -77,34 +66,35 @@ class CallGuardScreeningService : CallScreeningService() {
                 android.net.Uri.encode(number)
             )
             val cursor: Cursor? = contentResolver.query(
-                uri,
-                arrayOf(ContactsContract.PhoneLookup._ID),
-                null, null, null
+                uri, arrayOf(ContactsContract.PhoneLookup._ID), null, null, null
             )
             cursor?.use { it.moveToFirst() } ?: false
         } catch (e: SecurityException) {
-            // No contacts permission -> treat as unknown to be safe
             false
         }
     }
 
     private fun respondAllow(callDetails: Call.Details) {
-        val response = CallResponse.Builder()
-            .setDisallowCall(false)
-            .setRejectCall(false)
-            .setSkipCallLog(false)
-            .setSkipNotification(false)
-            .build()
-        respondToCall(callDetails, response)
+        respondToCall(
+            callDetails,
+            CallResponse.Builder()
+                .setDisallowCall(false)
+                .setRejectCall(false)
+                .setSkipCallLog(false)
+                .setSkipNotification(false)
+                .build()
+        )
     }
 
     private fun respondBlock(callDetails: Call.Details) {
-        val response = CallResponse.Builder()
-            .setDisallowCall(true)
-            .setRejectCall(true)
-            .setSkipCallLog(false)
-            .setSkipNotification(false)
-            .build()
-        respondToCall(callDetails, response)
+        respondToCall(
+            callDetails,
+            CallResponse.Builder()
+                .setDisallowCall(true)
+                .setRejectCall(true)
+                .setSkipCallLog(false)
+                .setSkipNotification(false)
+                .build()
+        )
     }
 }

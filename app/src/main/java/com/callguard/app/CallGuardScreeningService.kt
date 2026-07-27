@@ -18,10 +18,11 @@ class CallGuardScreeningService : CallScreeningService() {
     override fun onScreenCall(callDetails: Call.Details) {
         val prefs = Prefs(applicationContext)
         val number = callDetails.handle?.schemeSpecificPart
+        val rawHandleId = callDetails.accountHandle?.id
         val simSlot = resolveSimSlot(callDetails)
         val mode = prefs.modeForSlot(simSlot)
 
-        Log.d(TAG, "Incoming call from $number on simSlot=$simSlot mode=$mode")
+        Log.d(TAG, "Incoming call from $number on simSlot=$simSlot mode=$mode rawHandleId=$rawHandleId")
 
         val allowed = when (mode) {
             Prefs.ALLOW_ALL -> true
@@ -30,23 +31,37 @@ class CallGuardScreeningService : CallScreeningService() {
             else -> true
         }
 
-        prefs.logCall(number, simSlot, mode, allowed)
+        prefs.logCall(number, simSlot, mode, allowed, rawHandleId)
 
         if (allowed) respondAllow(callDetails) else respondBlock(callDetails)
     }
 
     private fun resolveSimSlot(callDetails: Call.Details): Int {
-        return try {
-            val handle = callDetails.accountHandle ?: return -1
-            val telephonyManager =
-                getSystemService(TelephonyManager::class.java) ?: return -1
-            val subscriptionManager =
-                getSystemService(SubscriptionManager::class.java) ?: return -1
+        val handle = callDetails.accountHandle ?: return -1
+        val subscriptionManager = getSystemService(SubscriptionManager::class.java) ?: return -1
 
+        // Try 1: PhoneAccountHandle.id is often the subscription ID directly on many OEMs
+        val idAsSubId = handle.id.toIntOrNull()
+        if (idAsSubId != null) {
+            try {
+                @Suppress("MissingPermission")
+                val info = subscriptionManager.getActiveSubscriptionInfo(idAsSubId)
+                if (info != null) {
+                    return info.simSlotIndex
+                }
+            } catch (e: SecurityException) {
+                Log.w(TAG, "No permission reading subscription info via handle.id", e)
+            }
+        }
+
+        // Try 2: official TelephonyManager API as fallback
+        return try {
+            val telephonyManager = getSystemService(TelephonyManager::class.java) ?: return -1
             @Suppress("MissingPermission")
             val subId = telephonyManager.getSubscriptionId(handle)
-            if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return -1
-
+            if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+                return -1
+            }
             @Suppress("MissingPermission")
             val info = subscriptionManager.getActiveSubscriptionInfo(subId)
             info?.simSlotIndex ?: -1

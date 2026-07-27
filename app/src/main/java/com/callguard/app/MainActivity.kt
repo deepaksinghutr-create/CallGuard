@@ -2,10 +2,13 @@ package com.callguard.app
 
 import android.Manifest
 import android.app.role.RoleManager
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -28,22 +31,15 @@ class MainActivity : AppCompatActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
-        val allGranted = results.values.all { it }
-        if (!allGranted) {
-            Toast.makeText(
-                this,
-                "App ko sahi se kaam karne ke liye saari permissions allow karna zaroori hai",
-                Toast.LENGTH_LONG
-            ).show()
+        if (!results.values.all { it }) {
+            Toast.makeText(this, "Saari permissions allow karna zaroori hai", Toast.LENGTH_LONG).show()
         }
         updateStatusText()
     }
 
     private val roleLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) {
-        updateStatusText()
-    }
+    ) { updateStatusText() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,16 +48,9 @@ class MainActivity : AppCompatActivity() {
 
         prefs = Prefs(this)
 
-        binding.switchBlocking.isChecked = prefs.isBlockingEnabled
-        binding.switchBlocking.setOnCheckedChangeListener { _, isChecked ->
-            prefs.isBlockingEnabled = isChecked
-            Toast.makeText(
-                this,
-                if (isChecked) "SIM 1 par unknown calls block honge"
-                else "Sabhi calls allow rahengi",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+        setupSpinner(binding.spinnerSim1, prefs.sim1Mode) { prefs.sim1Mode = it }
+        setupSpinner(binding.spinnerSim2, prefs.sim2Mode) { prefs.sim2Mode = it }
+        setupSpinner(binding.spinnerFallback, prefs.fallbackMode) { prefs.fallbackMode = it }
 
         binding.btnGrantPermissions.setOnClickListener { requestAllPermissions() }
         binding.btnSetDefaultScreeningApp.setOnClickListener { requestScreeningRole() }
@@ -73,6 +62,21 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updateStatusText()
+    }
+
+    private fun setupSpinner(spinner: Spinner, currentMode: Int, onSelected: (Int) -> Unit) {
+        val adapter = ArrayAdapter.createFromResource(
+            this, R.array.call_mode_options, android.R.layout.simple_spinner_item
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
+        spinner.setSelection(currentMode)
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                onSelected(position)
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
     }
 
     private fun requestAllPermissions() {
@@ -89,16 +93,11 @@ class MainActivity : AppCompatActivity() {
             val roleManager = getSystemService(RoleManager::class.java)
             if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
                 if (!roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
-                    val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
-                    roleLauncher.launch(intent)
+                    roleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))
                 }
             }
         } else {
-            Toast.makeText(
-                this,
-                "Settings > Apps > Default apps > Caller ID & spam app mein CallGuard select karein",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(this, "Settings > Apps > Default apps > Caller ID & spam app mein CallGuard select karein", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -108,13 +107,11 @@ class MainActivity : AppCompatActivity() {
         }
         val roleHeld = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) ?: false
-        } else {
-            true
-        }
+        } else true
 
         binding.textStatus.text = buildString {
-            append(if (permsGranted) "✔ Permissions: OK\n" else "✘ Permissions: Missing (tap button below)\n")
-            append(if (roleHeld) "✔ Default call screening app: Set" else "✘ Default call screening app: Not set (tap button below)")
+            append(if (permsGranted) "✔ Permissions: OK\n" else "✘ Permissions: Missing (neeche button dabayein)\n")
+            append(if (roleHeld) "✔ Default call screening app: Set" else "✘ Default call screening app: Not set (neeche button dabayein)")
         }
     }
 }

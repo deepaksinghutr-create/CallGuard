@@ -174,7 +174,26 @@
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_tab_bar"
                 android:padding="14dp"/>
+<TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="Debug log (last screened calls)"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="15sp"/>
 
+            <TextView
+                android:id="@+id/textDebugLog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_tab_bar"
+                android:padding="14dp"
+                android:fontFamily="monospace"
+                android:textColor="#CCCCCC"
+                android:textSize="11sp"
+                android:text="No calls screened yet."/>
         </LinearLayout>
     </ScrollView>
 

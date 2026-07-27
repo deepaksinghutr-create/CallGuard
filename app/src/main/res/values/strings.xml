@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">CallGuard</string>
     <string-array name="call_mode_options">
-        <item>Sabhi calls allow karein</item>
-        <item>Sirf Contacts allow karein (baaki block)</item>
-        <item>Sabhi calls block karein</item>
+        <item>Allow all calls</item>
+        <item>Allow contacts only (block others)</item>
+        <item>Block all calls</item>
     </string-array>
 </resources>

@@ -50,7 +50,6 @@ class CallGuardScreeningService : CallScreeningService() {
     }
 
     private fun resolveSimSlot(callDetails: Call.Details): Int {
-        // Try the normal way first (works on some devices)
         val handle = callDetails.accountHandle
         if (handle != null) {
             val subscriptionManager = getSystemService(SubscriptionManager::class.java)
@@ -60,31 +59,13 @@ class CallGuardScreeningService : CallScreeningService() {
                     @Suppress("MissingPermission")
                     val info = subscriptionManager.getActiveSubscriptionInfo(idAsSubId)
                     if (info != null) return info.simSlotIndex
-                } catch (e: SecurityException) { }
+                } catch (e: SecurityException) {
+                    Log.w(TAG, "No permission reading subscription info via handle.id", e)
+                }
             }
         }
 
-        // Fallback: use what we captured from the ringing broadcast
         return RingingSimTracker.getRecentSlotOrUnknown()
-    }
-
-        return try {
-            val telephonyManager = getSystemService(TelephonyManager::class.java) ?: return -1
-            @Suppress("MissingPermission")
-            val subId = telephonyManager.getSubscriptionId(handle)
-            if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
-                return -1
-            }
-            @Suppress("MissingPermission")
-            val info = subscriptionManager.getActiveSubscriptionInfo(subId)
-            info?.simSlotIndex ?: -1
-        } catch (e: SecurityException) {
-            Log.w(TAG, "Missing permission to resolve SIM slot", e)
-            -1
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not resolve SIM slot", e)
-            -1
-        }
     }
 
     private fun isNumberInContacts(number: String): Boolean {

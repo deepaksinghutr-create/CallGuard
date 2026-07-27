@@ -72,9 +72,10 @@ class MainActivity : AppCompatActivity() {
         refresh()
     }
 
-    private fun refresh() {
+   private fun refresh() {
         updateStatusText()
         updateSimNumbers()
+        binding.textDebugLog.text = prefs.getDebugLog()
     }
 
     private fun showPage(index: Int) {

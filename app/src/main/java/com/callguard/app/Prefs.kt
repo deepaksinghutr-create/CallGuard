@@ -42,7 +42,7 @@ class Prefs(context: Context) {
         else -> "Unknown"
     }
 
-    fun logCall(number: String?, slot: Int, mode: Int, allowed: Boolean, rawHandleId: String?) {
+    fun logCall(number: String?, slot: Int, mode: Int, allowed: Boolean, rawHandleId: String?, extrasDump: String) {
         val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
             .format(java.util.Date())
         val slotLabel = when (slot) {
@@ -51,11 +51,11 @@ class Prefs(context: Context) {
             else -> "Unknown slot"
         }
         val entry = "$time | ${number ?: "unknown"} | $slotLabel | rawId: ${rawHandleId ?: "null"} | rule: ${modeLabel(mode)} | " +
-                if (allowed) "ALLOWED" else "BLOCKED"
+                (if (allowed) "ALLOWED" else "BLOCKED") + "\nextras: $extrasDump"
 
         val existing = sp.getString(KEY_DEBUG_LOG, "") ?: ""
-        val lines = (listOf(entry) + existing.split("\n").filter { it.isNotBlank() }).take(15)
-        sp.edit().putString(KEY_DEBUG_LOG, lines.joinToString("\n")).apply()
+        val lines = (listOf(entry) + existing.split("\n\n").filter { it.isNotBlank() }).take(8)
+        sp.edit().putString(KEY_DEBUG_LOG, lines.joinToString("\n\n")).apply()
     }
 
     fun getDebugLog(): String {

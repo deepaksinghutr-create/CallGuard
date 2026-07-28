@@ -18,12 +18,10 @@ class CallGuardScreeningService : CallScreeningService() {
     override fun onScreenCall(callDetails: Call.Details) {
         val prefs = Prefs(applicationContext)
         val number = callDetails.handle?.schemeSpecificPart
-        val rawHandleId = callDetails.accountHandle?.id
-        val extrasDump = dumpExtras(callDetails)
-        val simSlot = resolveSimSlot(callDetails)
-        val mode = prefs.modeForSlot(simSlot)
+        val diagnostics = StringBuilder()
 
-        Log.d(TAG, "Incoming call from $number simSlot=$simSlot mode=$mode rawHandleId=$rawHandleId extras=$extrasDump")
+        val simSlot = resolveSimSlot(callDetails, diagnostics)
+        val mode = prefs.modeForSlot(simSlot)
 
         val allowed = when (mode) {
             Prefs.ALLOW_ALL -> true
@@ -32,40 +30,58 @@ class CallGuardScreeningService : CallScreeningService() {
             else -> true
         }
 
-        prefs.logCall(number, simSlot, mode, allowed, rawHandleId, extrasDump)
+        prefs.logCall(number, simSlot, mode, allowed, diagnostics.toString())
 
         if (allowed) respondAllow(callDetails) else respondBlock(callDetails)
     }
 
-    private fun dumpExtras(callDetails: Call.Details): String {
+    private fun resolveSimSlot(callDetails: Call.Details, diag: StringBuilder): Int {
         return try {
-            val extras = callDetails.extras
-            if (extras == null || extras.isEmpty) return "none"
-            extras.keySet().joinToString(", ") { key ->
-                "$key=${extras.get(key)}"
+            val handle = callDetails.accountHandle
+            if (handle == null) {
+                diag.append("handle=NULL")
+                return -1
             }
-        } catch (e: Exception) {
-            "error: ${e.message}"
-        }
-    }
+            diag.append("component=${handle.componentName?.shortClassName} id=${handle.id}")
 
-    private fun resolveSimSlot(callDetails: Call.Details): Int {
-        val handle = callDetails.accountHandle
-        if (handle != null) {
+            val telephonyManager = getSystemService(TelephonyManager::class.java)
             val subscriptionManager = getSystemService(SubscriptionManager::class.java)
-            val idAsSubId = handle.id.toIntOrNull()
-            if (idAsSubId != null && subscriptionManager != null) {
-                try {
+
+            if (telephonyManager != null) {
+                @Suppress("MissingPermission")
+                val subId = try {
+                    telephonyManager.getSubscriptionId(handle)
+                } catch (e: Exception) {
+                    diag.append(" subIdErr=${e.javaClass.simpleName}")
+                    SubscriptionManager.INVALID_SUBSCRIPTION_ID
+                }
+                diag.append(" subId=$subId")
+
+                if (subId != SubscriptionManager.INVALID_SUBSCRIPTION_ID && subscriptionManager != null) {
                     @Suppress("MissingPermission")
-                    val info = subscriptionManager.getActiveSubscriptionInfo(idAsSubId)
-                    if (info != null) return info.simSlotIndex
-                } catch (e: SecurityException) {
-                    Log.w(TAG, "No permission reading subscription info via handle.id", e)
+                    val info = subscriptionManager.getActiveSubscriptionInfo(subId)
+                    if (info != null) {
+                        diag.append(" -> slot=${info.simSlotIndex}")
+                        return info.simSlotIndex
+                    }
                 }
             }
-        }
 
-        return RingingSimTracker.getRecentSlotOrUnknown()
+            if (subscriptionManager != null) {
+                @Suppress("MissingPermission")
+                val activeSubs = subscriptionManager.activeSubscriptionInfoList
+                diag.append(" activeSubsCount=${activeSubs?.size ?: 0}")
+                activeSubs?.forEach {
+                    diag.append(" [slot${it.simSlotIndex}:iccTail=${it.iccId?.takeLast(6)}]")
+                }
+            }
+
+            diag.append(" -> UNRESOLVED")
+            -1
+        } catch (e: Exception) {
+            diag.append(" EXC=${e.javaClass.simpleName}:${e.message}")
+            -1
+        }
     }
 
     private fun isNumberInContacts(number: String): Boolean {

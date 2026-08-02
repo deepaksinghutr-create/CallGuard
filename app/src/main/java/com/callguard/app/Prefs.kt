@@ -89,4 +89,9 @@ class Prefs(context: Context) {
     fun clearCrash() {
         sp.edit().remove(KEY_LAST_CRASH).apply()
     }
+    fun setServiceStatus(status: String) {
+        sp.edit().putString("service_status", status).apply()
+    }
+
+    fun getServiceStatus(): String = sp.getString("service_status", "Not started yet") ?: "Not started yet"
 }

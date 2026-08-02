@@ -48,7 +48,7 @@ class RingDetectorService : Service() {
         unregisterListeners()
     }
 
-    private fun startForegroundWithNotification() {
+   private fun startForegroundWithNotification() {
         val channelId = "callguard_ring_detector"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -65,12 +65,11 @@ class RingDetectorService : Service() {
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(101, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+            startForeground(101, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
             startForeground(101, notification)
         }
     }
-
     @Suppress("DEPRECATION", "MissingPermission")
     private fun registerListeners() {
         val hasPermission = ContextCompat.checkSelfPermission(

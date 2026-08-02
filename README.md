@@ -1,6 +1,6 @@
 <div align="center">
 
-# CallGuard
+# CallGuard - Dual Sim Call Blocker 
 
 **Per-SIM incoming call control for Android**
 

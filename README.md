@@ -25,9 +25,10 @@ By default, each SIM can be set to one of three modes:
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/sim1.jpg" width="230" />
-  <img src="screenshots/sim2.jpg" width="230" />
-  <img src="screenshots/settings.jpg" width="230" />
+  <img src="screenshots/1785695095318_1_Call_Guard_-_Dual_Sim_Call_Blocker_.png" width="230" />
+  <img src="screenshots/1785695095319_2_Call_Guard_-_Dual_Sim_Call_Blocker.png" width="230" />
+  <img src="screenshots/1785695095320_3_Call_Guard_-_Dual_Sim_Call_Blocker.png" width="230" />
+  <img src="screenshots/1785695095320_4_Call_Guard_-_Dual_Sim_Call_Blocker_.png" width="230" />
 </p>
 
 Additional behavior:

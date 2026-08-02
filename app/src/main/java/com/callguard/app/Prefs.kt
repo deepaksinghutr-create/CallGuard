@@ -94,4 +94,9 @@ class Prefs(context: Context) {
     }
 
     fun getServiceStatus(): String = sp.getString("service_status", "Not started yet") ?: "Not started yet"
+    fun hasSeenWelcome(): Boolean = sp.getBoolean("has_seen_welcome", false)
+
+    fun setWelcomeSeen() {
+        sp.edit().putBoolean("has_seen_welcome", true).apply()
+    }
 }

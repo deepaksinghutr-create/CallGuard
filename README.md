@@ -1,47 +1,45 @@
 # CallGuard
 
-Android app: SIM 1 par unknown incoming calls block karta hai, SIM 2 par sabhi calls allow rehti hain.
+**CallGuard** is a dual-SIM call management app for Android that gives you independent, granular control over how incoming calls are handled on each SIM card in your phone.
 
-## APK kaise banayein (koi coding nahi chahiye)
+## What is CallGuard?
 
-1. **GitHub par free account banayein** (agar pehle se nahi hai): https://github.com/signup
+Most Android phones support two SIM cards, but the operating system treats incoming calls the same way regardless of which SIM they arrive on. CallGuard fixes this by letting you set a **separate call-filtering rule for each SIM slot**, so you can, for example, keep one number open to everyone while restricting the other to only your saved contacts.
 
-2. **Naya repository banayein**:
-   - github.com par login karke top-right "+" > "New repository" click karein
-   - Repository name: `CallGuard` (ya kuch bhi)
-   - "Create repository" click karein — README add mat karein (empty rakhein)
+This is especially useful for people who:
+- Use one SIM for personal contacts and another for business, deliveries, or public-facing numbers
+- Want to stop spam and unknown-number calls on one line without affecting the other
+- Need different call policies for a work SIM vs. a personal SIM
 
-3. **Is poore folder (CallGuard) ki saari files upload karein**:
-   - Naye repo page par "uploading an existing file" link dikhega, us par click karein
-   - Is `CallGuard` folder ke andar ki SAARI files aur folders (including hidden `.github` folder) drag-and-drop karein
-   - Neeche "Commit changes" green button dabayein
+## What does it do?
 
-   > Note: `.github` folder hidden hota hai file explorer mein — agar drag-drop se hidden folder nahi dikh raha, toh apne file manager mein "show hidden files" ON karein, ya GitHub Desktop app use karein.
+For **each SIM** (SIM 1 and SIM 2), you can independently choose one of three rules:
 
-4. **Build automatically start ho jayega**:
-   - Repo ke andar "Actions" tab par click karein
-   - "Build APK" workflow run hote dikhega (yellow dot = running, green tick = done) — 3-5 minute lagenge
+1. **Allow all calls** — no filtering, every call rings through as normal
+2. **Allow contacts only** — only numbers saved in your phone's Contacts are allowed to ring; all other calls are silently blocked
+3. **Block all calls** — every incoming call on that SIM is blocked
 
-5. **APK download karein**:
-   - Jab run complete ho jaye (green tick), us run par click karein
-   - Neeche "Artifacts" section mein "CallGuard-debug-apk" milega — usme click karke zip download karein
-   - Zip ke andar `app-debug.apk` hoga
+There is also a **fallback rule** that applies on devices where the phone's hardware/OS cannot reliably report which SIM a call came in on — this ensures the app still behaves predictably even on such devices.
 
-6. **Phone mein install karein**:
-   - `app-debug.apk` file apne Android phone mein transfer karein (WhatsApp/email/USB/Google Drive - kisi bhi tarike se)
-   - Phone par file open karein — "install from unknown sources" allow karne ke liye kahega, allow kar dein
-   - Install ho jayega
+## How it works
 
-## App use karna
+CallGuard registers itself as Android's **Call Screening app** (an official Android system role) and uses a background monitoring service to detect which SIM slot each incoming call is ringing on. Based on that, and your configured rule for that SIM, it either lets the call through normally or rejects it before it rings.
 
-1. App open karne par permissions maangega (contacts, phone state, call log) — sab allow karein
-2. "Default call screening app set karein" button dabayein — Android ek popup dikhayega jisme CallGuard ko select karna hai
-3. Toggle switch ON karein — ab SIM 1 par un numbers ki calls block ho jayengi jo aapke Contacts mein save nahi hain
-4. SIM 2 par hamesha sabhi calls (known + unknown) allow rahengi
+Blocked calls still appear in your call log as missed calls — the caller simply experiences it as an unreachable/busy number, which is standard behavior for call-screening apps.
+
+## Interface
+
+The app has a simple three-tab layout inspired by modern mobile design:
+- **SIM 1** — shows the SIM's number (if available) and its call rule
+- **SIM 2** — same, for the second SIM
+- **Settings** — permission management, the fallback rule, and a diagnostic log showing recent screened calls for troubleshooting
+
+## Privacy
+
+CallGuard works entirely on-device. It does not send call logs, contacts, or phone numbers to any server — all filtering decisions and logs are stored locally on your phone using Android's private app storage.
 
 ## Important limitations
 
-- Yeh sirf incoming calls ko "reject" karta hai — outgoing calls par koi effect nahi
-- Dual-SIM detection Android version aur phone brand (Samsung, Xiaomi, etc.) ke hisaab se thoda alag behave kar sakta hai; kuch phones par SIM slot detect na ho toh dono SIM par blocking logic SIM1 jaisa treat hoga (safe default)
-- Blocked calls call log mein "missed" dikhengi, caller ko "number busy/unreachable" jaisa experience milega (yeh call screening ka standard behavior hai)
-- Yeh ek "debug" build hai (testing ke liye) — apne personal use ke liye bilkul theek hai
+- CallGuard only **rejects incoming calls** — it does not affect outgoing calls
+- Reliable per-SIM detection depends on the phone manufacturer and Android version; some devices (especially certain Samsung, Xiaomi, or other heavily customized Android builds) may not always report the SIM slot correctly, in which case the fallback rule applies
+- This is currently a personal-use build intended for direct installation, not yet published on the Play Store

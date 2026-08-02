@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {
         updateStatusText()
         updateSimNumbers()
         binding.textDebugLog.text = prefs.getDebugLog()
+        binding.textServiceStatus.text = prefs.getServiceStatus()
     }
 
     private fun showPage(index: Int) {

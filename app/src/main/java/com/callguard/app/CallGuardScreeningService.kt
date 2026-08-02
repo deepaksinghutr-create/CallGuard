@@ -20,9 +20,14 @@ class CallGuardScreeningService : CallScreeningService() {
         val number = callDetails.handle?.schemeSpecificPart
         val diagnostics = StringBuilder()
 
-        val simSlot = resolveSimSlot(callDetails, diagnostics)
-        val mode = prefs.modeForSlot(simSlot)
+        var simSlot = prefs.getRecentRingSlot() ?: -1
+        if (simSlot >= 0) {
+            diagnostics.append("source=ringDetector slot=$simSlot")
+        } else {
+            simSlot = resolveSimSlotFallback(callDetails, diagnostics)
+        }
 
+        val mode = prefs.modeForSlot(simSlot)
         val allowed = when (mode) {
             Prefs.ALLOW_ALL -> true
             Prefs.BLOCK_ALL -> false
@@ -35,51 +40,31 @@ class CallGuardScreeningService : CallScreeningService() {
         if (allowed) respondAllow(callDetails) else respondBlock(callDetails)
     }
 
-    private fun resolveSimSlot(callDetails: Call.Details, diag: StringBuilder): Int {
+    private fun resolveSimSlotFallback(callDetails: Call.Details, diag: StringBuilder): Int {
         return try {
-            val handle = callDetails.accountHandle
-            if (handle == null) {
-                diag.append("handle=NULL")
+            val handle = callDetails.accountHandle ?: run {
+                diag.append("source=accountHandle handle=NULL")
                 return -1
             }
-            diag.append("component=${handle.componentName?.shortClassName} id=${handle.id}")
-
             val telephonyManager = getSystemService(TelephonyManager::class.java)
             val subscriptionManager = getSystemService(SubscriptionManager::class.java)
 
-            if (telephonyManager != null) {
+            if (telephonyManager != null && subscriptionManager != null) {
                 @Suppress("MissingPermission")
-                val subId = try {
-                    telephonyManager.getSubscriptionId(handle)
-                } catch (e: Exception) {
-                    diag.append(" subIdErr=${e.javaClass.simpleName}")
-                    SubscriptionManager.INVALID_SUBSCRIPTION_ID
-                }
-                diag.append(" subId=$subId")
-
-                if (subId != SubscriptionManager.INVALID_SUBSCRIPTION_ID && subscriptionManager != null) {
+                val subId = telephonyManager.getSubscriptionId(handle)
+                if (subId != SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
                     @Suppress("MissingPermission")
                     val info = subscriptionManager.getActiveSubscriptionInfo(subId)
                     if (info != null) {
-                        diag.append(" -> slot=${info.simSlotIndex}")
+                        diag.append("source=accountHandle slot=${info.simSlotIndex}")
                         return info.simSlotIndex
                     }
                 }
             }
-
-            if (subscriptionManager != null) {
-                @Suppress("MissingPermission")
-                val activeSubs = subscriptionManager.activeSubscriptionInfoList
-                diag.append(" activeSubsCount=${activeSubs?.size ?: 0}")
-                activeSubs?.forEach {
-                    diag.append(" [slot${it.simSlotIndex}:iccTail=${it.iccId?.takeLast(6)}]")
-                }
-            }
-
-            diag.append(" -> UNRESOLVED")
+            diag.append("source=accountHandle -> UNRESOLVED")
             -1
         } catch (e: Exception) {
-            diag.append(" EXC=${e.javaClass.simpleName}:${e.message}")
+            diag.append("source=accountHandle EXC=${e.javaClass.simpleName}")
             -1
         }
     }

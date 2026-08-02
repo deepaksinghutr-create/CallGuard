@@ -22,6 +22,14 @@ By default, each SIM can be set to one of three modes:
 - **Allow contacts only** — only numbers saved in your Contacts are allowed to ring; everyone else is silently blocked
 - **Block all calls** — every incoming call on that SIM is blocked
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/sim1.jpg" width="230" />
+  <img src="screenshots/sim2.jpg" width="230" />
+  <img src="screenshots/settings.jpg" width="230" />
+</p>
+
 Additional behavior:
 
 - **Independent per-SIM rules** — SIM 1 and SIM 2 can each run a completely different mode at the same time

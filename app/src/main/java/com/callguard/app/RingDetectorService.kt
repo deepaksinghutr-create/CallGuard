@@ -1,16 +1,19 @@
 package com.callguard.app
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
 import android.telephony.PhoneStateListener
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.core.content.ContextCompat
 
 class RingDetectorService : Service() {
 
@@ -18,12 +21,23 @@ class RingDetectorService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForegroundWithNotification()
-        registerListeners()
+        try {
+            startForegroundWithNotification()
+            registerListeners()
+        } catch (e: Exception) {
+            Log.w("RingDetector", "Failed to start service", e)
+            stopSelf()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (listeners.isEmpty()) registerListeners()
+        if (listeners.isEmpty()) {
+            try {
+                registerListeners()
+            } catch (e: Exception) {
+                Log.w("RingDetector", "Failed to register listeners on restart", e)
+            }
+        }
         return START_STICKY
     }
 
@@ -49,11 +63,25 @@ class RingDetectorService : Service() {
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setPriority(Notification.PRIORITY_MIN)
             .build()
-        startForeground(101, notification)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(101, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+        } else {
+            startForeground(101, notification)
+        }
     }
 
     @Suppress("DEPRECATION", "MissingPermission")
     private fun registerListeners() {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.READ_PHONE_STATE
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!hasPermission) {
+            Log.w("RingDetector", "READ_PHONE_STATE not granted, skipping listener registration")
+            return
+        }
+
         try {
             unregisterListeners()
             val subscriptionManager = getSystemService(SubscriptionManager::class.java) ?: return

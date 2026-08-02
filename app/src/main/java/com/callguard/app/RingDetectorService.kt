@@ -23,9 +23,11 @@ class RingDetectorService : Service() {
         super.onCreate()
         try {
             startForegroundWithNotification()
+            Prefs(applicationContext).setServiceStatus("Started OK at ${nowTime()}")
             registerListeners()
         } catch (e: Exception) {
             Log.w("RingDetector", "Failed to start service", e)
+            Prefs(applicationContext).setServiceStatus("FAILED to start: ${e.javaClass.simpleName}: ${e.message}")
             stopSelf()
         }
     }
@@ -35,7 +37,7 @@ class RingDetectorService : Service() {
             try {
                 registerListeners()
             } catch (e: Exception) {
-                Log.w("RingDetector", "Failed to register listeners on restart", e)
+                Prefs(applicationContext).setServiceStatus("Listener registration failed: ${e.message}")
             }
         }
         return START_STICKY
@@ -45,15 +47,19 @@ class RingDetectorService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        Prefs(applicationContext).setServiceStatus("Stopped at ${nowTime()}")
         unregisterListeners()
     }
 
-   private fun startForegroundWithNotification() {
+    private fun nowTime(): String =
+        java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+
+    private fun startForegroundWithNotification() {
         val channelId = "callguard_ring_detector"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId, "CallGuard monitoring",
-                NotificationManager.IMPORTANCE_MIN
+                NotificationManager.IMPORTANCE_LOW
             )
             val nm = getSystemService(NotificationManager::class.java)
             nm?.createNotificationChannel(channel)
@@ -61,7 +67,7 @@ class RingDetectorService : Service() {
         val notification = Notification.Builder(this, channelId)
             .setContentTitle("CallGuard is active")
             .setSmallIcon(android.R.drawable.stat_notify_sync)
-            .setPriority(Notification.PRIORITY_MIN)
+            .setPriority(Notification.PRIORITY_LOW)
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -70,6 +76,7 @@ class RingDetectorService : Service() {
             startForeground(101, notification)
         }
     }
+
     @Suppress("DEPRECATION", "MissingPermission")
     private fun registerListeners() {
         val hasPermission = ContextCompat.checkSelfPermission(
@@ -77,15 +84,27 @@ class RingDetectorService : Service() {
         ) == PackageManager.PERMISSION_GRANTED
 
         if (!hasPermission) {
-            Log.w("RingDetector", "READ_PHONE_STATE not granted, skipping listener registration")
+            Prefs(applicationContext).setServiceStatus("Missing READ_PHONE_STATE permission")
             return
         }
 
         try {
             unregisterListeners()
-            val subscriptionManager = getSystemService(SubscriptionManager::class.java) ?: return
-            val activeSubs = subscriptionManager.activeSubscriptionInfoList ?: return
-            val baseTelephonyManager = getSystemService(TelephonyManager::class.java) ?: return
+            val subscriptionManager = getSystemService(SubscriptionManager::class.java)
+            if (subscriptionManager == null) {
+                Prefs(applicationContext).setServiceStatus("SubscriptionManager unavailable")
+                return
+            }
+            val activeSubs = subscriptionManager.activeSubscriptionInfoList
+            if (activeSubs == null) {
+                Prefs(applicationContext).setServiceStatus("activeSubscriptionInfoList is null (permission or no SIMs)")
+                return
+            }
+            val baseTelephonyManager = getSystemService(TelephonyManager::class.java)
+            if (baseTelephonyManager == null) {
+                Prefs(applicationContext).setServiceStatus("TelephonyManager unavailable")
+                return
+            }
 
             for (sub in activeSubs) {
                 val subId = sub.subscriptionId
@@ -97,14 +116,16 @@ class RingDetectorService : Service() {
                         if (state == TelephonyManager.CALL_STATE_RINGING) {
                             Log.d("RingDetector", "Ringing on slot=$slot subId=$subId")
                             Prefs(applicationContext).recordRinging(slot, phoneNumber)
+                            Prefs(applicationContext).setServiceStatus("Last ring detected: slot=$slot at ${nowTime()}")
                         }
                     }
                 }
                 tmForSub.listen(listener, PhoneStateListener.LISTEN_CALL_STATE)
                 listeners.add(tmForSub to listener)
             }
+            Prefs(applicationContext).setServiceStatus("Listening on ${activeSubs.size} SIM(s), registered at ${nowTime()}")
         } catch (e: Exception) {
-            Log.w("RingDetector", "Failed to register listeners", e)
+            Prefs(applicationContext).setServiceStatus("Listener error: ${e.javaClass.simpleName}: ${e.message}")
         }
     }
 

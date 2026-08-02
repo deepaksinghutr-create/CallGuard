@@ -15,6 +15,8 @@ class Prefs(context: Context) {
         private const val KEY_SIM2_MODE = "sim2_mode"
         private const val KEY_FALLBACK_MODE = "fallback_mode"
         private const val KEY_DEBUG_LOG = "debug_log"
+        private const val KEY_LAST_RING_SLOT = "last_ring_slot"
+        private const val KEY_LAST_RING_TIME = "last_ring_time"
     }
 
     var sim1Mode: Int
@@ -40,6 +42,20 @@ class Prefs(context: Context) {
         CONTACTS_ONLY -> "Contacts only"
         BLOCK_ALL -> "Block all"
         else -> "Unknown"
+    }
+
+    fun recordRinging(slot: Int, number: String?) {
+        sp.edit()
+            .putInt(KEY_LAST_RING_SLOT, slot)
+            .putLong(KEY_LAST_RING_TIME, System.currentTimeMillis())
+            .apply()
+    }
+
+    fun getRecentRingSlot(maxAgeMs: Long = 6000): Int? {
+        val time = sp.getLong(KEY_LAST_RING_TIME, 0)
+        if (System.currentTimeMillis() - time > maxAgeMs) return null
+        val slot = sp.getInt(KEY_LAST_RING_SLOT, -1)
+        return if (slot >= 0) slot else null
     }
 
     fun logCall(number: String?, slot: Int, mode: Int, allowed: Boolean, diagnostics: String = "") {

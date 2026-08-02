@@ -2,6 +2,7 @@ package com.callguard.app
 
 import android.Manifest
 import android.app.role.RoleManager
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity() {
 
         requestAllPermissions()
         requestScreeningRole()
+        startRingDetector()
         showPage(0)
     }
 
@@ -72,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         refresh()
     }
 
-   private fun refresh() {
+    private fun refresh() {
         updateStatusText()
         updateSimNumbers()
         binding.textDebugLog.text = prefs.getDebugLog()
@@ -126,6 +128,15 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             Toast.makeText(this, "Go to Settings > Apps > Default apps > Caller ID & spam app, and select CallGuard", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun startRingDetector() {
+        val intent = Intent(this, RingDetectorService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
         }
     }
 

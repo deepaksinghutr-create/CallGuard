@@ -1,45 +1,63 @@
+<div align="center">
+
 # CallGuard
 
-**CallGuard** is a dual-SIM call management app for Android that gives you independent, granular control over how incoming calls are handled on each SIM card in your phone.
+**Per-SIM incoming call control for Android**
 
-## What is CallGuard?
+![Kotlin](https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=flat&logo=kotlin)
+![Platform](https://img.shields.io/badge/platform-Android-3DDC84?style=flat&logo=android)
+![License](https://img.shields.io/badge/license-Personal%20Use-lightgrey?style=flat)
 
-Most Android phones support two SIM cards, but the operating system treats incoming calls the same way regardless of which SIM they arrive on. CallGuard fixes this by letting you set a **separate call-filtering rule for each SIM slot**, so you can, for example, keep one number open to everyone while restricting the other to only your saved contacts.
+</div>
 
-This is especially useful for people who:
-- Use one SIM for personal contacts and another for business, deliveries, or public-facing numbers
-- Want to stop spam and unknown-number calls on one line without affecting the other
-- Need different call policies for a work SIM vs. a personal SIM
+---
 
-## What does it do?
+Most dual-SIM phones apply the same call-handling rules to both SIM cards. **CallGuard** changes that — it lets you set an **independent rule for each SIM**, so calls on SIM 1 can be filtered completely differently from calls on SIM 2.
 
-For **each SIM** (SIM 1 and SIM 2), you can independently choose one of three rules:
+## Features
 
-1. **Allow all calls** — no filtering, every call rings through as normal
-2. **Allow contacts only** — only numbers saved in your phone's Contacts are allowed to ring; all other calls are silently blocked
-3. **Block all calls** — every incoming call on that SIM is blocked
+By default, each SIM can be set to one of three modes:
 
-There is also a **fallback rule** that applies on devices where the phone's hardware/OS cannot reliably report which SIM a call came in on — this ensures the app still behaves predictably even on such devices.
+- **Allow all calls** — no filtering, everything rings through
+- **Allow contacts only** — only numbers saved in your Contacts are allowed to ring; everyone else is silently blocked
+- **Block all calls** — every incoming call on that SIM is blocked
+
+Additional behavior:
+
+- **Independent per-SIM rules** — SIM 1 and SIM 2 can each run a completely different mode at the same time
+- **Fallback rule** — a separate rule applies automatically on devices where Android cannot reliably report which SIM a call arrived on
+- **Live SIM info** — displays each SIM's number (where the carrier exposes it) directly in the app, or "No SIM found" if a slot is empty
+- **Background ring detection** — a lightweight background service listens per-subscription to reliably identify which SIM is ringing, working around inconsistent manufacturer telecom implementations (e.g. Samsung)
+- **Diagnostic log** — an in-app debug log of the last screened calls (number, SIM, rule applied, and decision) for troubleshooting without needing a computer
+
+## Permissions
+
+| Permission | Why it's needed |
+|---|---|
+| `CALL_SCREENING` | Required to block or allow incoming calls (Android's official call-screening role) |
+| `READ_PHONE_STATE` | Detect which SIM slot an incoming call is ringing on |
+| `READ_CALL_LOG` | Support call-based filtering logic |
+| `READ_CONTACTS` | Check whether an incoming number is saved, for "Allow contacts only" mode |
+| `READ_PHONE_NUMBERS` | Display each SIM's own number in the app |
+| `RECEIVE_BOOT_COMPLETED` | Restart background SIM monitoring after the phone reboots |
 
 ## How it works
 
-CallGuard registers itself as Android's **Call Screening app** (an official Android system role) and uses a background monitoring service to detect which SIM slot each incoming call is ringing on. Based on that, and your configured rule for that SIM, it either lets the call through normally or rejects it before it rings.
-
-Blocked calls still appear in your call log as missed calls — the caller simply experiences it as an unreachable/busy number, which is standard behavior for call-screening apps.
-
-## Interface
-
-The app has a simple three-tab layout inspired by modern mobile design:
-- **SIM 1** — shows the SIM's number (if available) and its call rule
-- **SIM 2** — same, for the second SIM
-- **Settings** — permission management, the fallback rule, and a diagnostic log showing recent screened calls for troubleshooting
+CallGuard registers as Android's system **Call Screening app**. When a call comes in, a background monitoring service identifies which SIM subscription is ringing, looks up your configured rule for that SIM, and either allows the call through or rejects it before it rings. Blocked calls appear in the call log as missed calls, the same way any call-screening app behaves.
 
 ## Privacy
 
-CallGuard works entirely on-device. It does not send call logs, contacts, or phone numbers to any server — all filtering decisions and logs are stored locally on your phone using Android's private app storage.
+CallGuard runs entirely on-device. No call logs, contacts, or phone numbers are ever sent to a server — all data and logs stay in the app's private local storage on your phone.
 
-## Important limitations
+## Limitations
 
-- CallGuard only **rejects incoming calls** — it does not affect outgoing calls
-- Reliable per-SIM detection depends on the phone manufacturer and Android version; some devices (especially certain Samsung, Xiaomi, or other heavily customized Android builds) may not always report the SIM slot correctly, in which case the fallback rule applies
-- This is currently a personal-use build intended for direct installation, not yet published on the Play Store
+- Only incoming calls are affected — outgoing calls are not filtered
+- SIM-slot detection depends on the phone manufacturer and Android version; some heavily customized Android builds may not always report it correctly, in which case the fallback rule applies
+- Currently distributed as a direct-install APK for personal use; not yet published on the Play Store
+
+## Installation
+
+1. Download the latest APK from the [Actions](../../actions) tab (built automatically via GitHub Actions)
+2. Transfer it to your Android phone and install (enable "install from unknown sources" if prompted)
+3. Open the app, grant the requested permissions, and set it as the default call-screening app when asked
+4. Configure SIM 1 and SIM 2 rules from their respective tabs

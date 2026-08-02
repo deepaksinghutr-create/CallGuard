@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
         if (!results.values.all { it }) {
             Toast.makeText(this, "All permissions must be allowed for this app to work", Toast.LENGTH_LONG).show()
         }
+        startRingDetectorIfReady()
         refresh()
     }
 
@@ -52,6 +53,16 @@ class MainActivity : AppCompatActivity() {
 
         prefs = Prefs(this)
 
+        val lastCrash = prefs.getLastCrash()
+        if (lastCrash != null) {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Last crash details")
+                .setMessage(lastCrash)
+                .setPositiveButton("OK") { _, _ -> prefs.clearCrash() }
+                .setCancelable(false)
+                .show()
+        }
+
         setupSpinner(binding.spinnerSim1, prefs.sim1Mode) { prefs.sim1Mode = it }
         setupSpinner(binding.spinnerSim2, prefs.sim2Mode) { prefs.sim2Mode = it }
         setupSpinner(binding.spinnerFallback, prefs.fallbackMode) { prefs.fallbackMode = it }
@@ -65,7 +76,7 @@ class MainActivity : AppCompatActivity() {
 
         requestAllPermissions()
         requestScreeningRole()
-        startRingDetector()
+        startRingDetectorIfReady()
         showPage(0)
     }
 
@@ -131,12 +142,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startRingDetector() {
-        val intent = Intent(this, RingDetectorService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
+    /** Only starts the background ring-detector service once the required permissions are actually granted. */
+    private fun startRingDetectorIfReady() {
+        try {
+            val hasPhoneState = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.READ_PHONE_STATE
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!hasPhoneState) return
+
+            val intent = Intent(this, RingDetectorService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("MainActivity", "Could not start ring detector", e)
         }
     }
 

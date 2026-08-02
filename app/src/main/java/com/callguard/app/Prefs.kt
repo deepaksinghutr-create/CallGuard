@@ -17,6 +17,7 @@ class Prefs(context: Context) {
         private const val KEY_DEBUG_LOG = "debug_log"
         private const val KEY_LAST_RING_SLOT = "last_ring_slot"
         private const val KEY_LAST_RING_TIME = "last_ring_time"
+        private const val KEY_LAST_CRASH = "last_crash"
     }
 
     var sim1Mode: Int
@@ -77,5 +78,15 @@ class Prefs(context: Context) {
     fun getDebugLog(): String {
         val log = sp.getString(KEY_DEBUG_LOG, "") ?: ""
         return log.ifBlank { "No calls screened yet." }
+    }
+
+    fun saveCrash(stackTrace: String) {
+        sp.edit().putString(KEY_LAST_CRASH, stackTrace).apply()
+    }
+
+    fun getLastCrash(): String? = sp.getString(KEY_LAST_CRASH, null)
+
+    fun clearCrash() {
+        sp.edit().remove(KEY_LAST_CRASH).apply()
     }
 }

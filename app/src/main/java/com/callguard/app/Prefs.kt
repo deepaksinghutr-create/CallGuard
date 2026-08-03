@@ -1,6 +1,9 @@
 package com.callguard.app
 
 import android.content.Context
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class Prefs(context: Context) {
 
@@ -18,7 +21,20 @@ class Prefs(context: Context) {
         private const val KEY_LAST_RING_SLOT = "last_ring_slot"
         private const val KEY_LAST_RING_TIME = "last_ring_time"
         private const val KEY_LAST_CRASH = "last_crash"
+        private const val KEY_SERVICE_STATUS = "service_status"
+        private const val KEY_NOTIF_TONE = "notification_tone_uri"
+
+        private const val KEY_STATS_DATE = "stats_date"
+        private const val KEY_BLOCKED_TODAY = "blocked_today"
+        private const val KEY_ALLOWED_TODAY = "allowed_today"
+        private const val KEY_SPAM_BLOCKED_TOTAL = "spam_blocked_total"
+        private const val KEY_LAST_UPDATE_TIME = "last_update_time"
+
+        private const val KEY_BLOCKED_CALLS_LOG = "blocked_calls_log"
+        private const val KEY_WHITELIST = "whitelist_numbers"
     }
+
+    // ---- Modes ----
 
     var sim1Mode: Int
         get() = sp.getInt(KEY_SIM1_MODE, CONTACTS_ONLY)
@@ -39,11 +55,20 @@ class Prefs(context: Context) {
     }
 
     fun modeLabel(mode: Int): String = when (mode) {
-        ALLOW_ALL -> "Allow all"
-        CONTACTS_ONLY -> "Contacts only"
-        BLOCK_ALL -> "Block all"
+        ALLOW_ALL -> "Allow all calls"
+        CONTACTS_ONLY -> "Allow contacts only"
+        BLOCK_ALL -> "Block all calls"
         else -> "Unknown"
     }
+
+    fun modeSubtitle(mode: Int): String = when (mode) {
+        ALLOW_ALL -> "Everyone can call through"
+        CONTACTS_ONLY -> "Only calls from your contacts will be allowed"
+        BLOCK_ALL -> "All incoming calls will be blocked"
+        else -> ""
+    }
+
+    // ---- Ring detector ----
 
     fun recordRinging(slot: Int, number: String?) {
         sp.edit()
@@ -59,14 +84,11 @@ class Prefs(context: Context) {
         return if (slot >= 0) slot else null
     }
 
+    // ---- Debug log ----
+
     fun logCall(number: String?, slot: Int, mode: Int, allowed: Boolean, diagnostics: String = "") {
-        val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
-            .format(java.util.Date())
-        val slotLabel = when (slot) {
-            0 -> "SIM 1"
-            1 -> "SIM 2"
-            else -> "Unknown slot"
-        }
+        val time = timeNow()
+        val slotLabel = slotLabel(slot)
         val entry = "$time | ${number ?: "unknown"} | $slotLabel | rule: ${modeLabel(mode)} | " +
                 (if (allowed) "ALLOWED" else "BLOCKED") + "\n  diag: $diagnostics"
 
@@ -80,6 +102,8 @@ class Prefs(context: Context) {
         return log.ifBlank { "No calls screened yet." }
     }
 
+    // ---- Crash reporting ----
+
     fun saveCrash(stackTrace: String) {
         sp.edit().putString(KEY_LAST_CRASH, stackTrace).apply()
     }
@@ -89,19 +113,123 @@ class Prefs(context: Context) {
     fun clearCrash() {
         sp.edit().remove(KEY_LAST_CRASH).apply()
     }
+
+    // ---- Service status ----
+
     fun setServiceStatus(status: String) {
-        sp.edit().putString("service_status", status).apply()
+        sp.edit().putString(KEY_SERVICE_STATUS, status).apply()
     }
 
-    fun getServiceStatus(): String = sp.getString("service_status", "Not started yet") ?: "Not started yet"
+    fun getServiceStatus(): String = sp.getString(KEY_SERVICE_STATUS, "Not started yet") ?: "Not started yet"
+
+    // ---- Notification tone ----
+
+    fun getNotificationToneUri(): String? = sp.getString(KEY_NOTIF_TONE, null)
+
+    fun setNotificationToneUri(uri: String?) {
+        sp.edit().putString(KEY_NOTIF_TONE, uri).apply()
+    }
+
+    // ---- Stats (Blocked Today / Allowed Today / Spam Blocked total / Last Update) ----
+
+    private fun today(): String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+    private fun resetStatsIfNewDay() {
+        val storedDate = sp.getString(KEY_STATS_DATE, "")
+        if (storedDate != today()) {
+            sp.edit()
+                .putString(KEY_STATS_DATE, today())
+                .putInt(KEY_BLOCKED_TODAY, 0)
+                .putInt(KEY_ALLOWED_TODAY, 0)
+                .apply()
+        }
+    }
+
+    fun recordCallResult(allowed: Boolean) {
+        resetStatsIfNewDay()
+        if (allowed) {
+            sp.edit().putInt(KEY_ALLOWED_TODAY, getAllowedToday() + 1).apply()
+        } else {
+            sp.edit()
+                .putInt(KEY_BLOCKED_TODAY, getBlockedToday() + 1)
+                .putInt(KEY_SPAM_BLOCKED_TOTAL, getSpamBlockedTotal() + 1)
+                .apply()
+        }
+        sp.edit().putString(KEY_LAST_UPDATE_TIME, timeNow()).apply()
+    }
+
+    fun getBlockedToday(): Int {
+        resetStatsIfNewDay()
+        return sp.getInt(KEY_BLOCKED_TODAY, 0)
+    }
+
+    fun getAllowedToday(): Int {
+        resetStatsIfNewDay()
+        return sp.getInt(KEY_ALLOWED_TODAY, 0)
+    }
+
+    fun getSpamBlockedTotal(): Int = sp.getInt(KEY_SPAM_BLOCKED_TOTAL, 0)
+
+    fun getLastUpdateTime(): String = sp.getString(KEY_LAST_UPDATE_TIME, "--:--") ?: "--:--"
+
+    // ---- Blocked calls list (for "View Blocked Calls" screen) ----
+
+    private fun slotLabel(slot: Int): String = when (slot) {
+        0 -> "SIM 1"
+        1 -> "SIM 2"
+        else -> "Unknown"
+    }
+
+    fun recordBlockedCall(number: String?, slot: Int) {
+        val entry = "${timeNow()}|${slotLabel(slot)}|${number ?: "Unknown number"}"
+        val existing = sp.getString(KEY_BLOCKED_CALLS_LOG, "") ?: ""
+        val lines = (listOf(entry) + existing.split("\n").filter { it.isNotBlank() }).take(50)
+        sp.edit().putString(KEY_BLOCKED_CALLS_LOG, lines.joinToString("\n")).apply()
+    }
+
+    fun getBlockedCalls(slotFilter: Int? = null): List<Triple<String, String, String>> {
+        val raw = sp.getString(KEY_BLOCKED_CALLS_LOG, "") ?: ""
+        val all = raw.split("\n").filter { it.isNotBlank() }.mapNotNull {
+            val parts = it.split("|")
+            if (parts.size == 3) Triple(parts[0], parts[1], parts[2]) else null
+        }
+        return if (slotFilter == null) all else all.filter { it.second == slotLabel(slotFilter) }
+    }
+
+    // ---- Whitelist (extra allowed numbers beyond Contacts) ----
+
+    fun getWhitelist(): List<String> {
+        val raw = sp.getString(KEY_WHITELIST, "") ?: ""
+        return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }
+    }
+
+    fun addToWhitelist(number: String) {
+        val current = getWhitelist().toMutableList()
+        val cleaned = number.trim()
+        if (cleaned.isNotBlank() && !current.contains(cleaned)) {
+            current.add(cleaned)
+            sp.edit().putString(KEY_WHITELIST, current.joinToString(",")).apply()
+        }
+    }
+
+    fun removeFromWhitelist(number: String) {
+        val current = getWhitelist().toMutableList()
+        current.remove(number)
+        sp.edit().putString(KEY_WHITELIST, current.joinToString(",")).apply()
+    }
+
+    fun isWhitelisted(number: String): Boolean {
+        return getWhitelist().any { number.endsWith(it) || it.endsWith(number) }
+    }
+
+    // ---- Welcome screen ----
+
     fun hasSeenWelcome(): Boolean = sp.getBoolean("has_seen_welcome", false)
 
     fun setWelcomeSeen() {
         sp.edit().putBoolean("has_seen_welcome", true).apply()
     }
-    fun getNotificationToneUri(): String? = sp.getString("notification_tone_uri", null)
 
-    fun setNotificationToneUri(uri: String?) {
-        sp.edit().putString("notification_tone_uri", uri).apply()
-    }
+    private fun timeNow(): String =
+        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
 }

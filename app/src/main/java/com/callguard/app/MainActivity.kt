@@ -1,6 +1,7 @@
 package com.callguard.app
 
 import android.Manifest
+import android.app.AlertDialog
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,10 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.telephony.SubscriptionManager
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.LinearLayout
-import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -34,11 +32,7 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.ANSWER_PHONE_CALLS,
             Manifest.permission.READ_PHONE_NUMBERS
         )
-        if (Build.VERSION.SDK_INT >= 33) {
-            base + Manifest.permission.POST_NOTIFICATIONS
-        } else {
-            base
-        }
+        if (Build.VERSION.SDK_INT >= 33) base + Manifest.permission.POST_NOTIFICATIONS else base
     }
 
     private val permissionLauncher = registerForActivityResult(
@@ -76,7 +70,7 @@ class MainActivity : AppCompatActivity() {
 
         val lastCrash = prefs.getLastCrash()
         if (lastCrash != null) {
-            androidx.appcompat.app.AlertDialog.Builder(this)
+            AlertDialog.Builder(this)
                 .setTitle("Last crash details")
                 .setMessage(lastCrash)
                 .setPositiveButton("OK") { _, _ -> prefs.clearCrash() }
@@ -84,9 +78,23 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
 
-        setupSpinner(binding.spinnerSim1, prefs.sim1Mode) { prefs.sim1Mode = it }
-        setupSpinner(binding.spinnerSim2, prefs.sim2Mode) { prefs.sim2Mode = it }
-        setupSpinner(binding.spinnerFallback, prefs.fallbackMode) { prefs.fallbackMode = it }
+        setupFallbackSpinner()
+
+        binding.cardBlockingRuleSim1.setOnClickListener { showModePicker(0) }
+        binding.cardBlockingRuleSim2.setOnClickListener { showModePicker(1) }
+
+        binding.rowViewBlockedSim1.setOnClickListener {
+            startActivity(Intent(this, BlockedCallsActivity::class.java).putExtra("slot", 0))
+        }
+        binding.rowViewBlockedSim2.setOnClickListener {
+            startActivity(Intent(this, BlockedCallsActivity::class.java).putExtra("slot", 1))
+        }
+        binding.rowWhitelistSim1.setOnClickListener {
+            startActivity(Intent(this, WhitelistActivity::class.java))
+        }
+        binding.rowWhitelistSim2.setOnClickListener {
+            startActivity(Intent(this, WhitelistActivity::class.java))
+        }
 
         binding.btnGrantPermissions.setOnClickListener { requestAllPermissions() }
         binding.btnSetDefaultScreeningApp.setOnClickListener { requestScreeningRole() }
@@ -110,6 +118,9 @@ class MainActivity : AppCompatActivity() {
     private fun refresh() {
         updateStatusText()
         updateSimNumbers()
+        updateProtectionCards()
+        updateBlockingRuleCards()
+        updateStats()
         binding.textDebugLog.text = prefs.getDebugLog()
         binding.textServiceStatus.text = prefs.getServiceStatus()
     }
@@ -128,19 +139,80 @@ class MainActivity : AppCompatActivity() {
         tab.setBackgroundResource(if (selected) R.drawable.bg_tab_selected else 0)
     }
 
-    private fun setupSpinner(spinner: Spinner, currentMode: Int, onSelected: (Int) -> Unit) {
-        val adapter = ArrayAdapter.createFromResource(
+    private fun setupFallbackSpinner() {
+        val adapter = android.widget.ArrayAdapter.createFromResource(
             this, R.array.call_mode_options, android.R.layout.simple_spinner_item
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-        spinner.setSelection(currentMode)
-        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                onSelected(position)
+        binding.spinnerFallback.adapter = adapter
+        binding.spinnerFallback.setSelection(prefs.fallbackMode)
+        binding.spinnerFallback.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                prefs.fallbackMode = position
             }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
+    }
+
+    private fun showModePicker(slot: Int) {
+        val options = arrayOf("Allow all calls", "Allow contacts only", "Block all calls")
+        val current = if (slot == 0) prefs.sim1Mode else prefs.sim2Mode
+
+        AlertDialog.Builder(this)
+            .setTitle(if (slot == 0) "SIM 1 blocking rule" else "SIM 2 blocking rule")
+            .setSingleChoiceItems(options, current) { dialog, which ->
+                if (slot == 0) prefs.sim1Mode = which else prefs.sim2Mode = which
+                updateBlockingRuleCards()
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun updateBlockingRuleCards() {
+        binding.textBlockingRuleTitleSim1.text = prefs.modeLabel(prefs.sim1Mode)
+        binding.textBlockingRuleSubtitleSim1.text = prefs.modeSubtitle(prefs.sim1Mode)
+        binding.textBlockingRuleTitleSim2.text = prefs.modeLabel(prefs.sim2Mode)
+        binding.textBlockingRuleSubtitleSim2.text = prefs.modeSubtitle(prefs.sim2Mode)
+    }
+
+    private fun updateProtectionCards() {
+        val permsGranted = requiredPermissions.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
+        val roleHeld = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            getSystemService(RoleManager::class.java)?.isRoleHeld(RoleManager.ROLE_CALL_SCREENING) ?: false
+        } else true
+
+        val isProtected = permsGranted && roleHeld
+        val statusText = if (isProtected) "Active" else "Setup needed"
+        val statusColor = if (isProtected) 0xFF4CAF50.toInt() else 0xFFFF9800.toInt()
+        val subtitle = if (isProtected) "Both SIMs are protected" else "Complete setup in Settings tab"
+
+        binding.textProtectionStatusSim1.text = statusText
+        binding.textProtectionStatusSim1.setTextColor(statusColor)
+        binding.textProtectionSubtitleSim1.text = subtitle
+
+        binding.textProtectionStatusSim2.text = statusText
+        binding.textProtectionStatusSim2.setTextColor(statusColor)
+        binding.textProtectionSubtitleSim2.text = subtitle
+    }
+
+    private fun updateStats() {
+        val blocked = prefs.getBlockedToday().toString()
+        val allowed = prefs.getAllowedToday().toString()
+        val total = prefs.getSpamBlockedTotal().toString()
+        val lastUpdate = prefs.getLastUpdateTime()
+
+        binding.textBlockedTodaySim1.text = blocked
+        binding.textAllowedTodaySim1.text = allowed
+        binding.textSpamBlockedSim1.text = total
+        binding.textLastUpdateSim1.text = lastUpdate
+
+        binding.textBlockedTodaySim2.text = blocked
+        binding.textAllowedTodaySim2.text = allowed
+        binding.textSpamBlockedSim2.text = total
+        binding.textLastUpdateSim2.text = lastUpdate
     }
 
     private fun requestAllPermissions() {
@@ -188,7 +260,6 @@ class MainActivity : AppCompatActivity() {
             val hasPhoneState = ContextCompat.checkSelfPermission(
                 this, Manifest.permission.READ_PHONE_STATE
             ) == PackageManager.PERMISSION_GRANTED
-
             if (!hasPhoneState) return
 
             val intent = Intent(this, RingDetectorService::class.java)

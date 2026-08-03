@@ -30,6 +30,13 @@
         <activity
             android:name=".MainActivity"
             android:exported="false" />
+        <activity
+            android:name=".BlockedCallsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".WhitelistActivity"
+            android:exported="false" />
         <service
             android:name=".CallGuardScreeningService"
             android:permission="android.permission.BIND_SCREENING_SERVICE"

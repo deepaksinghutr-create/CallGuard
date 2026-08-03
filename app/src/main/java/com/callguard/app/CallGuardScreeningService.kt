@@ -37,7 +37,17 @@ class CallGuardScreeningService : CallScreeningService() {
 
         prefs.logCall(number, simSlot, mode, allowed, diagnostics.toString())
 
-        if (allowed) respondAllow(callDetails) else respondBlock(callDetails)
+        if (allowed) {
+            respondAllow(callDetails)
+        } else {
+            respondBlock(callDetails)
+            val simLabel = when (simSlot) {
+                0 -> "SIM 1"
+                1 -> "SIM 2"
+                else -> "Unknown SIM"
+            }
+            NotificationHelper.showBlockedCallNotification(applicationContext, number, simLabel)
+        }
     }
 
     private fun resolveSimSlotFallback(callDetails: Call.Details, diag: StringBuilder): Int {

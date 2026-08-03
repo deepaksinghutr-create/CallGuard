@@ -31,16 +31,19 @@ class CallGuardScreeningService : CallScreeningService() {
         val allowed = when (mode) {
             Prefs.ALLOW_ALL -> true
             Prefs.BLOCK_ALL -> false
-            Prefs.CONTACTS_ONLY -> number != null && isNumberInContacts(number)
+            Prefs.CONTACTS_ONLY -> number != null &&
+                    (isNumberInContacts(number) || prefs.isWhitelisted(number))
             else -> true
         }
 
         prefs.logCall(number, simSlot, mode, allowed, diagnostics.toString())
+        prefs.recordCallResult(allowed)
 
         if (allowed) {
             respondAllow(callDetails)
         } else {
             respondBlock(callDetails)
+            prefs.recordBlockedCall(number, simSlot)
             val simLabel = when (simSlot) {
                 0 -> "SIM 1"
                 1 -> "SIM 2"
@@ -48,6 +51,7 @@ class CallGuardScreeningService : CallScreeningService() {
             }
             NotificationHelper.showBlockedCallNotification(applicationContext, number, simLabel)
         }
+    }
     }
 
     private fun resolveSimSlotFallback(callDetails: Call.Details, diag: StringBuilder): Int {

@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.telephony.SubscriptionManager
@@ -24,13 +26,20 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var prefs: Prefs
 
-    private val requiredPermissions = arrayOf(
-        Manifest.permission.READ_PHONE_STATE,
-        Manifest.permission.READ_CALL_LOG,
-        Manifest.permission.READ_CONTACTS,
-        Manifest.permission.ANSWER_PHONE_CALLS,
-        Manifest.permission.READ_PHONE_NUMBERS
-    )
+    private val requiredPermissions: Array<String> by lazy {
+        val base = arrayOf(
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CALL_LOG,
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.ANSWER_PHONE_CALLS,
+            Manifest.permission.READ_PHONE_NUMBERS
+        )
+        if (Build.VERSION.SDK_INT >= 33) {
+            base + Manifest.permission.POST_NOTIFICATIONS
+        } else {
+            base
+        }
+    }
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -46,12 +55,24 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { refresh() }
 
+    private val toneLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+        if (uri != null) {
+            prefs.setNotificationToneUri(uri.toString())
+            NotificationHelper.updateChannelSound(this, uri)
+            Toast.makeText(this, "Notification tone updated", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         prefs = Prefs(this)
+        NotificationHelper.ensureChannelExists(this)
 
         val lastCrash = prefs.getLastCrash()
         if (lastCrash != null) {
@@ -69,6 +90,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnGrantPermissions.setOnClickListener { requestAllPermissions() }
         binding.btnSetDefaultScreeningApp.setOnClickListener { requestScreeningRole() }
+        binding.btnSetNotificationTone.setOnClickListener { openTonePicker() }
 
         binding.tabSim1.setOnClickListener { showPage(0) }
         binding.tabSim2.setOnClickListener { showPage(1) }
@@ -141,6 +163,24 @@ class MainActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "Go to Settings > Apps > Default apps > Caller ID & spam app, and select CallGuard", Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun openTonePicker() {
+        val currentUriString = prefs.getNotificationToneUri()
+        val currentUri = if (!currentUriString.isNullOrBlank()) {
+            Uri.parse(currentUriString)
+        } else {
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        }
+
+        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Choose blocked-call notification tone")
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
+        }
+        toneLauncher.launch(intent)
     }
 
     private fun startRingDetectorIfReady() {

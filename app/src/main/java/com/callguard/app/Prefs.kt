@@ -99,4 +99,9 @@ class Prefs(context: Context) {
     fun setWelcomeSeen() {
         sp.edit().putBoolean("has_seen_welcome", true).apply()
     }
+    fun getNotificationToneUri(): String? = sp.getString("notification_tone_uri", null)
+
+    fun setNotificationToneUri(uri: String?) {
+        sp.edit().putString("notification_tone_uri", uri).apply()
+    }
 }

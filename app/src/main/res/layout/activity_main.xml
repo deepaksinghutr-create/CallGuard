@@ -14,7 +14,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp"
+            android:padding="20dp"
             android:paddingBottom="120dp">
 
             <TextView
@@ -22,34 +22,212 @@
                 android:layout_height="wrap_content"
                 android:text="SIM 1"
                 android:textColor="#FFFFFF"
-                android:textSize="28sp"
+                android:textSize="26sp"
                 android:textStyle="bold"/>
 
             <TextView
                 android:id="@+id/textSim1Number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="20dp"
                 android:text="Detecting..."
                 android:textColor="#AAAAAA"
-                android:textSize="16sp"/>
+                android:textSize="15sp"/>
 
+            <!-- Protection status card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="18dp"
+                android:layout_marginBottom="16dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Protection Status"
+                    android:textColor="#AAAAAA"
+                    android:textSize="13sp"/>
+                <TextView
+                    android:id="@+id/textProtectionStatusSim1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Checking..."
+                    android:textColor="#4CAF50"
+                    android:textSize="24sp"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/textProtectionSubtitleSim1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text=""
+                    android:textColor="#888888"
+                    android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- Blocking rule card -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:text="Incoming call rule"
+                android:text="Blocking Rule"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
-                android:textSize="15sp"/>
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"/>
 
-            <Spinner
-                android:id="@+id/spinnerSim1"
+            <LinearLayout
+                android:id="@+id/cardBlockingRuleSim1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_tab_bar"
-                android:padding="14dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="18dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginBottom="16dp">
+                <TextView
+                    android:id="@+id/textBlockingRuleTitleSim1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Allow contacts only"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/textBlockingRuleSubtitleSim1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Only calls from your contacts will be allowed"
+                    android:textColor="#AAAAAA"
+                    android:textSize="13sp"/>
+            </LinearLayout>
+
+            <!-- Stats grid -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginEnd="6dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Blocked Today" android:textColor="#AAAAAA" android:textSize="11sp"/>
+                    <TextView android:id="@+id/textBlockedTodaySim1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0" android:textColor="#FF5252" android:textSize="22sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginStart="6dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Allowed Today" android:textColor="#AAAAAA" android:textSize="11sp"/>
+                    <TextView android:id="@+id/textAllowedTodaySim1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0" android:textColor="#4CAF50" android:textSize="22sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginEnd="6dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Total Blocked" android:textColor="#AAAAAA" android:textSize="11sp"/>
+                    <TextView android:id="@+id/textSpamBlockedSim1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0" android:textColor="#FFB74D" android:textSize="22sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginStart="6dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Last Update" android:textColor="#AAAAAA" android:textSize="11sp"/>
+                    <TextView android:id="@+id/textLastUpdateSim1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="--:--" android:textColor="#9575CD" android:textSize="18sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Menu rows -->
+            <LinearLayout
+                android:id="@+id/rowViewBlockedSim1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginBottom="10dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="📋  View Blocked Calls"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="#666666"
+                    android:textSize="20sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/rowWhitelistSim1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="👥  Whitelist (Allowed Numbers)"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="#666666"
+                    android:textSize="20sp"/>
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
@@ -65,7 +243,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp"
+            android:padding="20dp"
             android:paddingBottom="120dp">
 
             <TextView
@@ -73,39 +251,213 @@
                 android:layout_height="wrap_content"
                 android:text="SIM 2"
                 android:textColor="#FFFFFF"
-                android:textSize="28sp"
+                android:textSize="26sp"
                 android:textStyle="bold"/>
 
             <TextView
                 android:id="@+id/textSim2Number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="20dp"
                 android:text="Detecting..."
                 android:textColor="#AAAAAA"
-                android:textSize="16sp"/>
+                android:textSize="15sp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="18dp"
+                android:layout_marginBottom="16dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Protection Status"
+                    android:textColor="#AAAAAA"
+                    android:textSize="13sp"/>
+                <TextView
+                    android:id="@+id/textProtectionStatusSim2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Checking..."
+                    android:textColor="#4CAF50"
+                    android:textSize="24sp"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/textProtectionSubtitleSim2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text=""
+                    android:textColor="#888888"
+                    android:textSize="13sp"/>
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:text="Incoming call rule"
+                android:text="Blocking Rule"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
-                android:textSize="15sp"/>
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"/>
 
-            <Spinner
-                android:id="@+id/spinnerSim2"
+            <LinearLayout
+                android:id="@+id/cardBlockingRuleSim2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_tab_bar"
-                android:padding="14dp"/>
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="18dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginBottom="16dp">
+                <TextView
+                    android:id="@+id/textBlockingRuleTitleSim2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Allow all calls"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/textBlockingRuleSubtitleSim2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Everyone can call through"
+                    android:textColor="#AAAAAA"
+                    android:textSize="13sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginEnd="6dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Blocked Today" android:textColor="#AAAAAA" android:textSize="11sp"/>
+                    <TextView android:id="@+id/textBlockedTodaySim2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0" android:textColor="#FF5252" android:textSize="22sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginStart="6dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Allowed Today" android:textColor="#AAAAAA" android:textSize="11sp"/>
+                    <TextView android:id="@+id/textAllowedTodaySim2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0" android:textColor="#4CAF50" android:textSize="22sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="20dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginEnd="6dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Total Blocked" android:textColor="#AAAAAA" android:textSize="11sp"/>
+                    <TextView android:id="@+id/textSpamBlockedSim2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="0" android:textColor="#FFB74D" android:textSize="22sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginStart="6dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Last Update" android:textColor="#AAAAAA" android:textSize="11sp"/>
+                    <TextView android:id="@+id/textLastUpdateSim2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="--:--" android:textColor="#9575CD" android:textSize="18sp" android:textStyle="bold" android:layout_marginTop="4dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/rowViewBlockedSim2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginBottom="10dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="📋  View Blocked Calls"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="#666666"
+                    android:textSize="20sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/rowWhitelistSim2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:clickable="true"
+                android:focusable="true">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="👥  Whitelist (Allowed Numbers)"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="#666666"
+                    android:textSize="20sp"/>
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- SETTINGS PAGE -->
+    <!-- SETTINGS PAGE (unchanged from before) -->
     <ScrollView
         android:id="@+id/pageSettings"
         android:layout_width="match_parent"
@@ -149,7 +501,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:text="Set as default call screening app"/>
-            
+
             <Button
                 android:id="@+id/btnSetNotificationTone"
                 android:layout_width="match_parent"
@@ -161,7 +513,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
                 android:text="If SIM cannot be detected"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
@@ -182,6 +533,7 @@
                 android:layout_marginTop="8dp"
                 android:background="@drawable/bg_tab_bar"
                 android:padding="14dp"/>
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -202,10 +554,11 @@
                 android:textColor="#CCCCCC"
                 android:textSize="12sp"
                 android:text="Not started yet"/>
-<TextView
+
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="24dp"
                 android:text="Debug log (last screened calls)"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
@@ -222,6 +575,7 @@
                 android:textColor="#CCCCCC"
                 android:textSize="11sp"
                 android:text="No calls screened yet."/>
+
         </LinearLayout>
     </ScrollView>
 

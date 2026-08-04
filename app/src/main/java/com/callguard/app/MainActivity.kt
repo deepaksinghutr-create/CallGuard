@@ -100,9 +100,9 @@ class MainActivity : AppCompatActivity() {
         binding.btnSetDefaultScreeningApp.setOnClickListener { requestScreeningRole() }
         binding.btnSetNotificationTone.setOnClickListener { openTonePicker() }
 
-        binding.tabSim1.setOnClickListener { showPage(0) }
-        binding.tabSim2.setOnClickListener { showPage(1) }
-        binding.tabSettings.setOnClickListener { showPage(2) }
+        binding.tabSim1.setOnClickListener { animateTabTap(it); showPage(0) }
+        binding.tabSim2.setOnClickListener { animateTabTap(it); showPage(1) }
+        binding.tabSettings.setOnClickListener { animateTabTap(it); showPage(2) }
 
         requestAllPermissions()
         requestScreeningRole()
@@ -332,5 +332,10 @@ class MainActivity : AppCompatActivity() {
             binding.textSim1Number.text = "Permission required"
             binding.textSim2Number.text = "Permission required"
         }
+    }
+    private fun animateTabTap(view: View) {
+        view.animate().scaleX(0.9f).scaleY(0.9f).setDuration(80).withEndAction {
+            view.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+        }.start()
     }
 }

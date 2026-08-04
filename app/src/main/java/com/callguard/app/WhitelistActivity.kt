@@ -37,12 +37,12 @@ class WhitelistActivity : AppCompatActivity() {
         val numbers = prefs.getWhitelist()
 
         if (numbers.isEmpty()) {
-            val empty = TextView(this).apply {
+            val emptyView = TextView(this).apply {
                 text = "No whitelisted numbers yet."
                 setTextColor(0xFFAAAAAA.toInt())
                 textSize = 14f
             }
-            container.addView(empty)
+            container.addView(emptyView)
             return
         }
 
@@ -53,7 +53,7 @@ class WhitelistActivity : AppCompatActivity() {
                 setPadding(20, 20, 20, 20)
                 gravity = android.view.Gravity.CENTER_VERTICAL
             }
-            val text = TextView(this).apply {
+            val numberView = TextView(this).apply {
                 text = number
                 setTextColor(0xFFFFFFFF.toInt())
                 textSize = 15f
@@ -66,7 +66,7 @@ class WhitelistActivity : AppCompatActivity() {
                     refreshList()
                 }
             }
-            row.addView(text)
+            row.addView(numberView)
             row.addView(removeBtn)
 
             val params = LinearLayout.LayoutParams(

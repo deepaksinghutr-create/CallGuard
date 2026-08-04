@@ -52,7 +52,6 @@ class CallGuardScreeningService : CallScreeningService() {
             NotificationHelper.showBlockedCallNotification(applicationContext, number, simLabel)
         }
     }
-    }
 
     private fun resolveSimSlotFallback(callDetails: Call.Details, diag: StringBuilder): Int {
         return try {

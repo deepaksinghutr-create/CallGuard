@@ -126,9 +126,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPage(index: Int) {
-        binding.pageSim1.visibility = if (index == 0) View.VISIBLE else View.GONE
-        binding.pageSim2.visibility = if (index == 1) View.VISIBLE else View.GONE
-        binding.pageSettings.visibility = if (index == 2) View.VISIBLE else View.GONE
+        val pages = listOf(binding.pageSim1, binding.pageSim2, binding.pageSettings)
+        val target = pages[index]
+
+        pages.forEach { page ->
+            if (page != target && page.visibility == View.VISIBLE) {
+                page.animate()
+                    .alpha(0f)
+                    .setDuration(120)
+                    .withEndAction { page.visibility = View.GONE }
+                    .start()
+            }
+        }
+
+        target.alpha = 0f
+        target.visibility = View.VISIBLE
+        target.animate()
+            .alpha(1f)
+            .setDuration(200)
+            .start()
 
         highlightTab(binding.tabSim1, index == 0)
         highlightTab(binding.tabSim2, index == 1)
